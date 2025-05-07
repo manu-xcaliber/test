@@ -1,0 +1,64 @@
+configmap:
+  app-config:
+    data:
+      config.json: "{\n  \"logLevel\": \"info\",\n  \"enableCache\": true,\n  \"apiVersion\"\
+        : \"v1\"\n}\n"
+  nginx-config:
+    data:
+      default.conf: "server {\n  listen 80;\n  server_name _;\n  \n  location / {\n\
+        \    root /usr/share/nginx/html;\n    index index.html;\n  }\n  \n  location\
+        \ /api {\n    proxy_pass http://backend-api:8080;\n  }\n}\n"
+deployment:
+  backend-api:
+    env:
+      API_KEY: ${SECRET_API_KEY}
+      DB_HOST: postgres
+      DB_PORT: '5432'
+    image: my-backend:1.2.3
+    port: 8080
+    replicas: 3
+    serviceAccount: backend-sa
+  web-frontend:
+    env:
+      APP_NAME: frontend
+      DEBUG: 'true'
+    image: nginx:latest
+    port: 80
+    replicas: 2
+    resources:
+      limits:
+        cpu: 200m
+        memory: 128Mi
+      requests:
+        cpu: 100m
+        memory: 64Mi
+    volumes:
+    - configMapName: nginx-config
+      mountPath: /etc/nginx/conf.d
+      name: config-volume
+      type: configmap
+ingress:
+  main-ingress:
+    host: myapp.example.com
+    ingressClassName: nginx
+    paths:
+    - path: /
+      service: web-frontend
+      servicePort: 80
+    - path: /api
+      service: backend-api
+      servicePort: 8080
+    tls: myapp-tls
+namespace: my-app
+service:
+  backend-api:
+    port: 8080
+    type: ClusterIP
+  public-web:
+    nodePort: 30080
+    port: 80
+    targetPort: 80
+    type: NodePort
+  web-frontend:
+    port: 80
+    type: ClusterIP
