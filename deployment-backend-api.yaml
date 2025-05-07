@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-api
+  namespace: my-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: backend-api
+  template:
+    metadata:
+      labels:
+        app: backend-api
+    spec:
+      containers:
+      - env:
+        - name: DB_HOST
+          value: postgres
+        - name: DB_PORT
+          value: '5432'
+        - name: API_KEY
+          value: ${SECRET_API_KEY}
+        image: my-backend:1.2.3
+        name: backend-api
+        ports:
+        - containerPort: 8080
+      serviceAccountName: backend-sa
