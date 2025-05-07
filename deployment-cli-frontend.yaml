@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cli-frontend
+  namespace: my-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cli-frontend
+  template:
+    metadata:
+      labels:
+        app: cli-frontend
+    spec:
+      containers:
+      - env:
+        - name: APP_NAME
+          value: frontend
+        - name: DEBUG
+          value: 'true'
+        image: nginx:latest
+        name: cli-frontend
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 200m
+            memory: 128Mi
+          requests:
+            cpu: 100m
+            memory: 64Mi
+        volumeMounts:
+        - mountPath: /etc/nginx/conf.d
+          name: config-volume
+      volumes:
+      - configMap:
+          name: nginx-config
+        name: config-volume
